@@ -12,7 +12,7 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import java.util.concurrent.TimeUnit
 
-data class PaymentCreateRequest(
+data class ApiPaymentCreateRequest(
     val amount: Double,
     val description: String,
     val sellerId: String,
@@ -49,7 +49,7 @@ interface ApiService {
     suspend fun getSkillDetail(@Path("skillId") skillId: String): Skill
 
     @POST("api/payment/create")
-    suspend fun createPayment(@Body request: PaymentCreateRequest): PaymentApiResponse
+    suspend fun createPayment(@Body request: ApiPaymentCreateRequest): PaymentApiResponse
 
     @GET("api/payment/status/{paymentId}")
     suspend fun getPaymentStatus(@Path("paymentId") paymentId: String): PaymentApiResponse

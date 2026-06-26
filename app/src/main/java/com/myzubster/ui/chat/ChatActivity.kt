@@ -1,11 +1,11 @@
 package com.myzubster.ui.chat
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.commit
 import com.myzubster.R
-import com.myzubster.fragments.PaymentFragment
+import com.myzubster.activities.PaymentActivity
 
 class ChatActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,17 +21,12 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun requestPayment(amountXmr: String, description: String, sellerId: String) {
-        supportFragmentManager.commit {
-            replace(
-                R.id.chatFragmentContainer,
-                PaymentFragment.newInstance(
-                    amount = amountXmr.toDoubleOrNull() ?: 0.01,
-                    sellerId = sellerId,
-                    description = description
-                )
-            )
-            addToBackStack("payment")
+        val intent = Intent(this, PaymentActivity::class.java).apply {
+            putExtra(PaymentActivity.EXTRA_AMOUNT, amountXmr.toDoubleOrNull() ?: 0.01)
+            putExtra(PaymentActivity.EXTRA_SELLER_ID, sellerId)
+            putExtra(PaymentActivity.EXTRA_DESCRIPTION, description)
         }
+        startActivity(intent)
     }
 
     companion object {
