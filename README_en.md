@@ -1,3 +1,10 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-0.2.0-brightgreen.svg)]()
+[![Kotlin Version](https://img.shields.io/badge/Kotlin-2.0.0-blue.svg)]()
+[![Android Platform](https://img.shields.io/badge/Platform-Android-indigo.svg)]()
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat)](<YOUR_GITHUB_ACTIONS_STATUS>) 
+[![Open Source](https://img.shields.io/badge/open_source-Yes-blue.svg)]()
+
 📝 New README.md Content (English)
 Copy
 markdown

@@ -1,0 +1,38 @@
+---
+name: 🐛 Bug Report
+labels: bug, needs-triage
+assignees: user # Qui va il tuo team di manutentori principali
+---
+
+## 🐞 Description of the Bug
+
+[Provide a concise summary of the problem. What is broken?]
+
+*Example: When I try to send an encrypted message while offline and then reconnect, the chat history does not sync correctly.*
+
+---
+
+### 🕵️ Steps to Reproduce (Crucial!)
+Please list the exact steps that led to the bug. This allows us to reproduce the issue reliably.
+
+1.  [Step 1: e.g., Log in with Google Account]
+2.  [Step 2: e.g., Navigate to the Skill Exchange tab]
+3.  [Step 3: Click on 'Monero Payment' button]
+4.  ...
+
+### ✅ Expected Behavior
+What should have happened? Describe the outcome that was expected according to the project documentation or design.
+
+### ❌ Actual Behavior
+What actually happened when you followed the steps above? Be detailed about any error messages, crashes, or incorrect data shown.
+
+---
+
+### 🖥️ Environment Details (For Debugging)
+
+*   **Device Model:** (e.g., Samsung Galaxy S23 / iPhone 14)
+*   **Operating System Version:** (e.g., Android 13 / iOS 17)
+*   **App Version:** (The version of MyZubster you are running, if known)
+
+### 📸 Screenshots/Media
+If possible, please attach screenshots or a short screen recording demonstrating the issue.
