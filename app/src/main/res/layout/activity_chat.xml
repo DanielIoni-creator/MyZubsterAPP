@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!-- Toolbar con pulsante Richiedi Pagamento -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/chatToolbar"
         android:layout_width="match_parent"
@@ -24,9 +25,22 @@
             android:text="💰 Richiedi Pagamento" />
     </com.google.android.material.appbar.MaterialToolbar>
 
+    <!-- Contenitore per i messaggi -->
     <FrameLayout
         android:id="@+id/chatFragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
+
+    <!-- Pulsante Richiedi Escrow -->
+    <Button
+        android:id="@+id/request_escrow_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="💰 Richiedi Escrow"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:textColor="@android:color/white" />
+
 </LinearLayout>
