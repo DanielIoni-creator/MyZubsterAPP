@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
-    // Credenziali di accesso
+    // ========== CREDENZIALI ==========
     username: {
         type: String,
         required: true,
@@ -30,7 +30,7 @@ const userSchema = new Schema({
         default: null
     },
 
-    // Monero (OPZIONALE)
+    // ========== MONERO (OPZIONALE) ==========
     moneroAddress: {
         type: String,
         trim: true,
@@ -40,7 +40,7 @@ const userSchema = new Schema({
         sparse: true
     },
 
-    // Profilo utente
+    // ========== PROFILO ==========
     name: {
         type: String,
         trim: true,
@@ -63,7 +63,7 @@ const userSchema = new Schema({
         default: null
     },
 
-    // Competenze (offerte e richieste)
+    // ========== COMPETENZE ==========
     skillsOffered: [{
         type: String,
         trim: true
@@ -73,8 +73,15 @@ const userSchema = new Schema({
         trim: true
     }],
 
-    // ========== SISTEMA DI REPUTAZIONE AVANZATO ==========
-    // Rating base (stelle)
+    // ========== RUOLI (PER IL PANNELLO ADMIN) ==========
+    role: {
+        type: String,
+        enum: ['user', 'moderator', 'admin'],
+        default: 'user',
+        index: true
+    },
+
+    // ========== REPUTAZIONE AVANZATA ==========
     rating: {
         type: Number,
         default: 0,
@@ -86,29 +93,21 @@ const userSchema = new Schema({
         default: 0,
         min: 0
     },
-
-    // Lavori completati
     totalJobsCompleted: {
         type: Number,
         default: 0,
         min: 0
     },
-
-    // Tasso di risposta (percentuale 0-100)
     responseRate: {
         type: Number,
         default: 0,
         min: 0,
         max: 100
     },
-
-    // Verifica identità (facoltativa)
     isIdentityVerified: {
         type: Boolean,
         default: false
     },
-
-    // Badge e certificazioni
     badges: [{
         type: String,
         trim: true
@@ -118,7 +117,7 @@ const userSchema = new Schema({
         trim: true
     }],
 
-    // Firebase FCM token per notifiche
+    // ========== NOTIFICHE E STATO ==========
     fcmToken: {
         type: String,
         trim: true,
@@ -137,7 +136,7 @@ const userSchema = new Schema({
         default: null
     },
 
-    // Timestamps
+    // ========== TIMESTAMPS ==========
     createdAt: {
         type: Date,
         default: Date.now
@@ -153,15 +152,16 @@ const userSchema = new Schema({
     strict: false
 });
 
-// Indici per performance
+// ========== INDICI ==========
 userSchema.index({ username: 1, email: 1 });
 userSchema.index({ rating: -1 });
 userSchema.index({ totalJobsCompleted: -1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ isIdentityVerified: 1 });
 userSchema.index({ badges: 1 });
+userSchema.index({ role: 1 });
 
-// Middleware pre-save per hashare la password e aggiornare updatedAt
+// ========== MIDDLEWARE ==========
 userSchema.pre('save', async function(next) {
     if (this.isModified('password')) {
         try {
@@ -175,14 +175,12 @@ userSchema.pre('save', async function(next) {
     next();
 });
 
-// Metodo per confrontare la password
+// ========== METODI DI AUTENTICAZIONE ==========
 userSchema.methods.comparePassword = async function(candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // ========== METODI PER LA REPUTAZIONE ==========
-
-// Metodo statico per aggiornare il rating
 userSchema.statics.updateRating = async function(userId) {
     const Review = mongoose.model('Review');
     const result = await Review.aggregate([
@@ -204,7 +202,6 @@ userSchema.statics.updateRating = async function(userId) {
     });
 };
 
-// Metodo per incrementare i lavori completati
 userSchema.methods.incrementCompletedJobs = async function() {
     this.totalJobsCompleted = (this.totalJobsCompleted || 0) + 1;
     this.updatedAt = new Date();
@@ -212,7 +209,6 @@ userSchema.methods.incrementCompletedJobs = async function() {
     return this.totalJobsCompleted;
 };
 
-// Metodo per aggiornare il tasso di risposta
 userSchema.methods.updateResponseRate = async function(responses, totalMessages) {
     if (totalMessages === 0) {
         this.responseRate = 0;
@@ -224,7 +220,7 @@ userSchema.methods.updateResponseRate = async function(responses, totalMessages)
     return this.responseRate;
 };
 
-// Metodo per aggiungere un badge
+// ========== METODI PER I BADGE ==========
 userSchema.methods.addBadge = async function(badgeName) {
     if (!this.badges.includes(badgeName)) {
         this.badges.push(badgeName);
@@ -234,7 +230,6 @@ userSchema.methods.addBadge = async function(badgeName) {
     return this.badges;
 };
 
-// Metodo per rimuovere un badge
 userSchema.methods.removeBadge = async function(badgeName) {
     this.badges = this.badges.filter(b => b !== badgeName);
     this.updatedAt = new Date();
@@ -242,7 +237,7 @@ userSchema.methods.removeBadge = async function(badgeName) {
     return this.badges;
 };
 
-// Metodo per verificare l'identità
+// ========== METODI PER LA VERIFICA ==========
 userSchema.methods.verifyIdentity = async function() {
     this.isIdentityVerified = true;
     this.updatedAt = new Date();
@@ -250,7 +245,26 @@ userSchema.methods.verifyIdentity = async function() {
     return this.isIdentityVerified;
 };
 
-// Metodo per ottenere il profilo pubblico (senza dati sensibili)
+// ========== METODI PER I RUOLI ==========
+userSchema.methods.isAdmin = function() {
+    return this.role === 'admin';
+};
+
+userSchema.methods.isModerator = function() {
+    return this.role === 'moderator' || this.role === 'admin';
+};
+
+userSchema.methods.setRole = async function(newRole) {
+    if (!['user', 'moderator', 'admin'].includes(newRole)) {
+        throw new Error('Ruolo non valido');
+    }
+    this.role = newRole;
+    this.updatedAt = new Date();
+    await this.save();
+    return this.role;
+};
+
+// ========== METODI PER IL PROFILO ==========
 userSchema.methods.getPublicProfile = function() {
     return {
         id: this._id,
@@ -270,11 +284,11 @@ userSchema.methods.getPublicProfile = function() {
         skillsOffered: this.skillsOffered,
         skillsWanted: this.skillsWanted,
         moneroAddress: this.moneroAddress,
+        role: this.role,
         createdAt: this.createdAt
     };
 };
 
-// Metodo per ottenere il profilo completo (solo per admin/utente stesso)
 userSchema.methods.getFullProfile = function() {
     return {
         ...this.getPublicProfile(),
@@ -287,4 +301,5 @@ userSchema.methods.getFullProfile = function() {
     };
 };
 
+// ========== ESPORTAZIONE ==========
 module.exports = mongoose.models.User || mongoose.model('User', userSchema);
