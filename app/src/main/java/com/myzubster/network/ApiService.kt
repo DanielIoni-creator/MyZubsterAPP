@@ -4,14 +4,14 @@ import com.myzubster.BuildConfig
 import com.myzubster.models.CreateReviewRequest
 import com.myzubster.models.Review
 import com.myzubster.models.Skill
+import com.myzubster.models.EscrowRequest
+import com.myzubster.models.EscrowResponse
+import com.myzubster.services.EscrowListResponse
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
+import retrofit2.http.*
 import java.util.concurrent.TimeUnit
 
 data class ApiPaymentCreateRequest(
@@ -47,9 +47,12 @@ data class PaymentWebhookRequest(
 )
 
 interface ApiService {
+
+    // ============ SKILLS ============
     @GET("api/skills/{skillId}")
     suspend fun getSkillDetail(@Path("skillId") skillId: String): Skill
 
+    // ============ REVIEWS ============
     @POST("api/reviews")
     suspend fun createReview(@Body request: CreateReviewRequest): Review
 
@@ -59,6 +62,7 @@ interface ApiService {
     @GET("api/reviews/skill/{skillId}")
     suspend fun getReviewsForSkill(@Path("skillId") skillId: String): List<Review>
 
+    // ============ PAYMENTS ============
     @POST("api/payment/create")
     suspend fun createPayment(@Body request: ApiPaymentCreateRequest): PaymentApiResponse
 
@@ -67,6 +71,25 @@ interface ApiService {
 
     @POST("api/payment/webhook")
     suspend fun updatePaymentFromWebhook(@Body request: PaymentWebhookRequest): PaymentApiResponse
+
+    // ============ ESCROW ============
+    @POST("/api/escrow/create")
+    suspend fun createEscrow(@Body request: EscrowRequest): EscrowResponse
+
+    @POST("/api/escrow/fund")
+    suspend fun fundEscrow(@Body transactionId: Map<String, String>): EscrowResponse
+
+    @POST("/api/escrow/release")
+    suspend fun releaseEscrow(@Body transactionId: Map<String, String>): EscrowResponse
+
+    @POST("/api/escrow/dispute")
+    suspend fun disputeEscrow(@Body request: Map<String, String>): EscrowResponse
+
+    @GET("/api/escrow/status/{transactionId}")
+    suspend fun getEscrowStatus(@Path("transactionId") transactionId: String): EscrowResponse
+
+    @GET("/api/escrow/user/{userId}")
+    suspend fun getUserEscrows(@Path("userId") userId: String): EscrowListResponse
 
     companion object {
         fun create(
