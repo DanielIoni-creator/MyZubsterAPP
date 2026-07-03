@@ -24,18 +24,15 @@ const skillSchema = new Schema({
     },
     price: { 
         type: Number, 
-        required: false,
         default: null
     },
     priceXmr: {
         type: Number,
-        required: false,
         default: null
     },
     duration: { 
         type: Number, 
-        required: false,
-        default: 1 // in hours
+        default: 1
     },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -57,8 +54,7 @@ const skillSchema = new Schema({
         },
         coordinates: {
             type: [Number],
-            required: false,
-            index: '2dsphere'
+            required: false
         }
     },
     address: { 
@@ -70,7 +66,6 @@ const skillSchema = new Schema({
         type: Number,
         default: 0
     },
-    // ========== ALTRI CAMPI ==========
     moderationNote: { type: String, trim: true },
     moderatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     moderatedAt: { type: Date },
@@ -88,11 +83,11 @@ const skillSchema = new Schema({
     strict: false
 });
 
-// Indici per performance
+// ============ INDICI ============
 skillSchema.index({ userId: 1, createdAt: -1 });
 skillSchema.index({ status: 1, createdAt: -1 });
 skillSchema.index({ category: 1 });
-skillSchema.index({ location: '2dsphere' });
+skillSchema.index({ location: '2dsphere' });  // Indice per query geospaziali
 
 // Middleware pre-save per aggiornare updatedAt
 skillSchema.pre('save', function(next) {
