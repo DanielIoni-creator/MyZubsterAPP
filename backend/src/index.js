@@ -22,8 +22,8 @@ app.post('/api/test/groq', async (req, res) => {
         if (!title || !category) {
             return res.status(400).json({ error: 'Titolo e categoria sono obbligatori' });
         }
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             description: `Servizio professionale di "${title}" (categoria: ${category}). Qualità e affidabilità garantite.`
         });
     } catch (error) {
@@ -38,6 +38,10 @@ app.use('/api/skills', skillRoutes);
 // ============ ROTTA PRENOTAZIONI ============
 const bookingRoutes = require('./routes/bookings');
 app.use('/api/bookings', bookingRoutes);
+
+// ============ ROTTA PREVENTIVI ============
+const quoteRoutes = require('./routes/quoteRoutes');
+app.use('/api/quotes', quoteRoutes);
 
 // ============ AVVIA IL SERVER ============
 app.listen(port, () => {

@@ -2,15 +2,15 @@ const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
     skillId: {
-        type: String, // Cambiato da ObjectId a String per test
+        type: String,
         required: true
     },
     clientId: {
-        type: String, // Cambiato da ObjectId a String per test
+        type: String,
         required: true
     },
     professionalId: {
-        type: String, // Cambiato da ObjectId a String per test
+        type: String,
         required: true
     },
     date: {

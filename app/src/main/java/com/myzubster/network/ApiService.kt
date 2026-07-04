@@ -1,15 +1,7 @@
 package com.myzubster.network
 
 import com.myzubster.BuildConfig
-import com.myzubster.models.CreateReviewRequest
-import com.myzubster.models.Review
-import com.myzubster.models.Skill
-import com.myzubster.models.EscrowRequest
-import com.myzubster.models.EscrowResponse
-import com.myzubster.models.BookingRequest
-import com.myzubster.models.BookingResponse
-import com.myzubster.models.BookingListResponse
-import com.myzubster.models.AvailableSlotsResponse
+import com.myzubster.models.*
 import com.myzubster.services.EscrowListResponse
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -118,6 +110,19 @@ interface ApiService {
         @Path("id") id: String,
         @Body status: Map<String, String>
     ): BookingResponse
+
+    // ============ QUOTES ============
+    @POST("/api/quotes")
+    suspend fun createQuote(@Body request: QuoteRequest): QuoteResponse
+
+    @GET("/api/quotes/booking/{bookingId}")
+    suspend fun getQuoteByBooking(@Path("bookingId") bookingId: String): QuoteResponse
+
+    @PUT("/api/quotes/{id}/status")
+    suspend fun updateQuoteStatus(
+        @Path("id") id: String,
+        @Body status: Map<String, String>
+    ): QuoteResponse
 
     companion object {
         fun create(

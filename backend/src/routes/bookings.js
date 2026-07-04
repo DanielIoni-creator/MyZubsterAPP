@@ -1,15 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking');
-const Skill = require('../models/Skill');
-// const { authenticate } = require('../middleware/auth');  // COMMENTATO PER TEST
+// const Skill = require('../models/Skill');  // COMMENTATO PER TEST
 
 // ============================================
 // POST /api/bookings - Crea una prenotazione (TEST)
 // ============================================
 router.post('/', async (req, res) => {
     try {
-        const { skillId, date, timeSlot, notes, clientId } = req.body;
+        const { skillId, date, timeSlot, notes, clientId, professionalId } = req.body;
 
         if (!skillId || !date || !timeSlot) {
             return res.status(400).json({
@@ -18,18 +17,20 @@ router.post('/', async (req, res) => {
             });
         }
 
-        const skill = await Skill.findById(skillId);
-        if (!skill) {
-            return res.status(404).json({
-                success: false,
-                error: 'Competenza non trovata'
-            });
-        }
+        // COMMENTATO PER TEST
+        // const skill = await Skill.findById(skillId);
+        // if (!skill) {
+        //     return res.status(404).json({
+        //         success: false,
+        //         error: 'Competenza non trovata'
+        //     });
+        // }
 
-        const actualClientId = clientId || 'test-user-123';
+        const actualClientId = clientId || 'test-client-123';
+        const actualProfessionalId = professionalId || 'test-prof-123';
 
         const existingBooking = await Booking.findOne({
-            professionalId: skill.userId,
+            professionalId: actualProfessionalId,
             date: new Date(date),
             timeSlot: timeSlot,
             status: { $nin: ['cancelled', 'completed'] }
@@ -45,7 +46,7 @@ router.post('/', async (req, res) => {
         const booking = new Booking({
             skillId,
             clientId: actualClientId,
-            professionalId: skill.userId,
+            professionalId: actualProfessionalId,
             date: new Date(date),
             timeSlot,
             notes,
@@ -89,9 +90,6 @@ router.get('/user/:userId', async (req, res) => {
         }
 
         const bookings = await Booking.find(filter)
-            .populate('skillId', 'title category priceXmr')
-            .populate('clientId', 'username name avatarUrl')
-            .populate('professionalId', 'username name avatarUrl')
             .sort({ date: -1 })
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
@@ -164,7 +162,7 @@ router.get('/available-slots', async (req, res) => {
 });
 
 // ============================================
-// PUT /api/bookings/:id/status - Aggiorna stato (TEST)
+// PUT /api/bookings/:id/status - Aggiorna stato
 // ============================================
 router.put('/:id/status', async (req, res) => {
     try {
@@ -208,5 +206,67 @@ router.put('/:id/status', async (req, res) => {
         });
     }
 });
+router.post('/', async (req, res) => {
+    try {
+        console.log('📩 Richiesta ricevuta:', req.body);
 
+        const { skillId, date, timeSlot, notes, clientId, professionalId } = req.body;
+
+        if (!skillId || !date || !timeSlot) {
+            console.log('❌ Campi mancanti');
+            return res.status(400).json({
+                success: false,
+                error: 'skillId, date e timeSlot sono obbligatori'
+            });
+        }
+
+        const actualClientId = clientId || 'test-client-123';
+        const actualProfessionalId = professionalId || 'test-prof-123';
+
+        console.log(`🔍 Verifica orario per: ${actualProfessionalId} - ${date} - ${timeSlot}`);
+
+        const existingBooking = await Booking.findOne({
+            professionalId: actualProfessionalId,
+            date: new Date(date),
+            timeSlot: timeSlot,
+            status: { $nin: ['cancelled', 'completed'] }
+        });
+
+        if (existingBooking) {
+            console.log('❌ Orario già prenotato');
+            return res.status(409).json({
+                success: false,
+                error: 'Orario già prenotato'
+            });
+        }
+
+        const booking = new Booking({
+            skillId,
+            clientId: actualClientId,
+            professionalId: actualProfessionalId,
+            date: new Date(date),
+            timeSlot,
+            notes,
+            status: 'pending'
+        });
+
+        await booking.save();
+
+        console.log('✅ Booking creato:', booking._id);
+
+        res.status(201).json({
+            success: true,
+            data: booking,
+            message: 'Prenotazione creata con successo'
+        });
+
+    } catch (error) {
+        console.error('❌ ERRORE creazione prenotazione:', error);
+        console.error('❌ Stack:', error.stack);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Errore interno del server'
+        });
+    }
+});
 module.exports = router;

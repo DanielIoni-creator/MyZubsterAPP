@@ -1,74 +1,29 @@
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
 
-const skillSchema = new Schema({
+const skillSchema = new mongoose.Schema({
     title: { 
         type: String, 
-        required: true,
-        trim: true
+        required: true 
     },
     description: { 
+        type: String 
+    },
+    category: { 
         type: String, 
-        trim: true,
-        maxlength: 500
+        required: true 
     },
-    category: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    type: {
-        type: String,
-        enum: ['offerta', 'richiesta'],
-        default: 'offerta'
+    userId: { 
+        type: String, 
+        required: true 
     },
     price: { 
         type: Number, 
-        default: null
+        default: 0 
     },
-    priceXmr: {
-        type: Number,
-        default: null
-    },
-    duration: { 
-        type: Number, 
-        default: 1
-    },
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-        index: true
-    },
-    status: {
-        type: String,
-        enum: ['pending', 'approved', 'rejected', 'active', 'completed', 'scaduto'],
-        default: 'pending'
-    },
-    // ========== GEOLOCALIZZAZIONE ==========
-    location: {
-        type: {
-            type: String,
-            enum: ['Point'],
-            default: 'Point'
-        },
-        coordinates: {
-            type: [Number],
-            required: false
-        }
-    },
-    address: { 
+    status: { 
         type: String, 
-        trim: true,
-        default: ''
+        default: 'approved' 
     },
-    distanceKm: { 
-        type: Number,
-        default: 0
-    },
-    moderationNote: { type: String, trim: true },
-    moderatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    moderatedAt: { type: Date },
     createdAt: { 
         type: Date, 
         default: Date.now 
@@ -79,20 +34,7 @@ const skillSchema = new Schema({
     }
 }, {
     collection: 'skills',
-    versionKey: false,
-    strict: false
+    versionKey: false
 });
 
-// ============ INDICI ============
-skillSchema.index({ userId: 1, createdAt: -1 });
-skillSchema.index({ status: 1, createdAt: -1 });
-skillSchema.index({ category: 1 });
-skillSchema.index({ location: '2dsphere' });  // Indice per query geospaziali
-
-// Middleware pre-save per aggiornare updatedAt
-skillSchema.pre('save', function(next) {
-    this.updatedAt = new Date();
-    next();
-});
-
-module.exports = mongoose.models.Skill || mongoose.model('Skill', skillSchema);
+module.exports = mongoose.model('Skill', skillSchema);

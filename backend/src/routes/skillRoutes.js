@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const Skill = require('../models/Skill');
 
-// GET /api/skills/nearby?lat=<latitude>&lng=<longitude>
+// ============================================
+// GET /api/skills/nearby - Competenze vicine (mock)
+// ============================================
 router.get('/nearby', (req, res) => {
     const { lat, lng } = req.query;
     if (!lat || !lng) {
@@ -10,7 +13,6 @@ router.get('/nearby', (req, res) => {
 
     console.log(`📍 Ricerca competenze vicine a lat: ${lat}, lng: ${lng}`);
 
-    // Dati mock
     const mockSkills = [
         {
             id: "1",
@@ -41,6 +43,46 @@ router.get('/nearby', (req, res) => {
         data: mockSkills,
         count: mockSkills.length
     });
+});
+
+// ============================================
+// POST /api/skills - Crea una skill (solo per test)
+// ============================================
+router.post('/', async (req, res) => {
+    try {
+        const { title, description, category, userId, price } = req.body;
+
+        if (!title || !category) {
+            return res.status(400).json({
+                success: false,
+                error: 'Titolo e categoria sono obbligatori'
+            });
+        }
+
+        const skill = new Skill({
+            title,
+            description,
+            category,
+            userId: userId || 'test-user-123',
+            price: price || 0,
+            status: 'approved'
+        });
+
+        await skill.save();
+
+        res.status(201).json({
+            success: true,
+            data: skill,
+            message: 'Skill creata con successo'
+        });
+
+    } catch (error) {
+        console.error('Errore creazione skill:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
 });
 
 module.exports = router;
