@@ -8,9 +8,14 @@
   "scripts": {
     "start": "node src/index.js",
     "start:json-store": "node src/server.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:unit": "jest --testMatch='**/__tests__/**/*.test.js'",
+    "test:coverage": "jest --coverage --coverageDirectory=coverage",
     "check": "node --check src/index.js && node --check src/server.js && node --check src/models/PaymentTransaction.js && node --check src/models/Review.js && node --check src/models/User.js && node --check src/models/Booking.js && node --check src/reviews/routes.js && node --check src/notifications/firebase.js && node --check src/services/notificationService.js && node --check src/payment/config.js && node --check src/payment/moneroClient.js && node --check src/payment/paymentStore.js && node --check src/payment/paymentService.js && node --check src/payment/routes.js && node --check src/routes/bookings.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
@@ -19,5 +24,9 @@
     "mongodb": "^6.12.0",
     "mongoose": "^8.9.5",
     "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
   }
 }

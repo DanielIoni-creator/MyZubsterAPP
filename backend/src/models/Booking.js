@@ -50,10 +50,18 @@ const bookingSchema = new Schema({
   timestamps: true
 });
 
-// Middleware per aggiornare completedAt quando lo status diventa 'completed'
+// Middleware per aggiornare completedAt quando lo status diventa 'completed' (per save)
+bookingSchema.pre('save', function(next) {
+  if (this.isModified('status') && this.status === 'completed' && !this.completedAt) {
+    this.completedAt = new Date();
+  }
+  next();
+});
+
+// Middleware per aggiornare completedAt quando lo status diventa 'completed' (per findOneAndUpdate)
 bookingSchema.pre('findOneAndUpdate', function(next) {
   const update = this.getUpdate();
-  if (update.status === 'completed' && !update.completedAt) {
+  if (update && update.status === 'completed' && !update.completedAt) {
     update.completedAt = new Date();
   }
   next();
