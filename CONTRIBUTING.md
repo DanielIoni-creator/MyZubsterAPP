@@ -1,79 +1,67 @@
-# Come contribuire a MyZubster
+# Contributing to MyZubster 🚀
 
-Grazie per l'interesse nel contribuire a MyZubster.
+> **First time contributing?** Welcome! We're excited to have you. This guide will help you get started.
 
-## Workflow consigliato
+---
 
-1. Fai fork o crea un branch dedicato dal branch principale di sviluppo.
-2. Dai al branch un nome descrittivo, per esempio:
+## 📋 Table of Contents
 
-   ```text
-   feature/profilo-utente
-   fix/pagamenti-monero
-   docs/readme-installazione
-   ```
+- [📜 Code of Conduct](#-code-of-conduct)
+- [🤝 How to Contribute](#-how-to-contribute)
+- [🐛 Reporting Bugs](#-reporting-bugs)
+- [💡 Suggesting Features](#-suggesting-features)
+- [💻 Development Setup](#-development-setup)
+- [📝 Pull Request Process](#-pull-request-process)
+- [🎨 Style Guides](#-style-guides)
+- [🧪 Testing Guidelines](#-testing-guidelines)
+- [❓ Questions](#-questions)
 
-3. Mantieni le modifiche piccole e leggibili.
-4. Aggiungi o aggiorna la documentazione quando cambi comportamento visibile.
-5. Apri una pull request con:
-   - descrizione del problema
-   - riepilogo della soluzione
-   - test eseguiti
-   - screenshot o note UI se tocchi l'app Android
+---
 
-## Check prima della pull request
+## 📜 Code of Conduct
 
-### Backend
+We are committed to providing a friendly, safe, and welcoming environment for all contributors. Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+### Our Standards
+
+**Positive behavior includes:**
+- Using welcoming and inclusive language
+- Being respectful of differing viewpoints
+- Gracefully accepting constructive criticism
+- Focusing on what's best for the community
+- Showing empathy towards other community members
+
+**Unacceptable behavior includes:**
+- Trolling, insulting/derogatory comments
+- Public or private harassment
+- Publishing others' private information
+- Other conduct which could reasonably be considered inappropriate
+
+---
+
+## 🤝 How to Contribute
+
+### 1. Find an Issue
+
+Look for issues with these labels:
+
+| Label | Description | For Who |
+|-------|-------------|---------|
+| 🟣 `good first issue` | Simple, well-defined tasks | **First-time contributors** |
+| 🟢 `help wanted` | Important tasks needing help | All contributors |
+| 🐛 `bug` | Something is broken | Bug fixers |
+| ✨ `enhancement` | New feature requests | Feature builders |
+
+### 2. Claim the Issue
+
+- Comment on the issue: `"I'd like to work on this"`
+- Wait for assignment or confirmation
+- If no response in 3 days, feel free to start
+
+### 3. Fork & Clone
 
 ```bash
-cd backend
-npm run check
-```
-
-### Android
-
-```bash
-./gradlew assembleDebug
-```
-
-Su Windows:
-
-```powershell
-.\gradlew.bat assembleDebug
-```
-
-## Regole sui segreti
-
-Non committare mai:
-
-- file `.env`
-- wallet reali
-- seed phrase
-- chiavi private
-- service account Firebase
-- token API
-- credenziali RPC
-
-Usa `.env.example` per documentare le variabili necessarie lasciando i valori vuoti o placeholder.
-
-## Stile codice
-
-- Preferisci nomi chiari e funzioni piccole.
-- Mantieni la UI Android semplice e verificabile.
-- Per il backend, gestisci errori e stati in modo esplicito.
-- Non mettere log con dati sensibili.
-
-## Pagamenti
-
-Le funzioni di pagamento Monero devono rimanere server-side. L'app Android può ricevere indirizzo, URI, importo e stato, ma non deve contenere segreti o wallet sensibili.
-
-## Segnalare problemi
-
-Quando segnali un bug, includi:
-
-- versione dell'app/backend
-- dispositivo o ambiente
-- passi per riprodurre
-- risultato atteso
-- risultato ottenuto
-- eventuali log rilevanti senza dati sensibili
+# Fork the repository on GitHub
+# Then clone your fork
+git clone https://github.com/your-username/MyZubsterh4x0r.git
+cd MyZubsterh4x0r
