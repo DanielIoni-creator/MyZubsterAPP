@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.myzubster.activities.BookingHistoryActivity
+import com.myzubster.payment.ui.PaymentActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -13,36 +14,27 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Pulsanti
         val btnTest = findViewById<Button>(R.id.btnTest)
         val btnBookingHistory = findViewById<Button>(R.id.btnBookingHistory)
         val btnSettings = findViewById<Button>(R.id.btnSettings)
 
+        // Test App
         btnTest.setOnClickListener {
             Toast.makeText(this, "✅ App funzionante!", Toast.LENGTH_SHORT).show()
         }
 
+        // Storico Prenotazioni
         btnBookingHistory.setOnClickListener {
-            val userId = getUserIdFromPreferences()
-            if (userId.isNotEmpty()) {
-                val intent = Intent(this, BookingHistoryActivity::class.java)
-                intent.putExtra("userId", userId)
-                startActivity(intent)
-            } else {
-                Toast.makeText(this, "⚠️ Usa ID di test", Toast.LENGTH_SHORT).show()
-                // Usa ID di test
-                val intent = Intent(this, BookingHistoryActivity::class.java)
-                intent.putExtra("userId", "65f1a2b3c4d5e6f7g8h9i0j1")
-                startActivity(intent)
-            }
+            // Usa un ID di test per ora
+            val intent = Intent(this, BookingHistoryActivity::class.java)
+            intent.putExtra("userId", "65f1a2b3c4d5e6f7g8h9i0j1")
+            startActivity(intent)
         }
 
+        // Impostazioni
         btnSettings.setOnClickListener {
             Toast.makeText(this, "⚙️ Impostazioni", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun getUserIdFromPreferences(): String {
-        val prefs = getSharedPreferences("MyZubsterPrefs", MODE_PRIVATE)
-        return prefs.getString("userId", "") ?: ""
     }
 }
