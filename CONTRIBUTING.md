@@ -1,67 +1,44 @@
-# Contributing to MyZubster 🚀
+# 🤝 Contributing to MyZubster
 
-> **First time contributing?** Welcome! We're excited to have you. This guide will help you get started.
+Thank you for your interest in contributing to **MyZubster**! This guide will help you get started.
 
 ---
 
 ## 📋 Table of Contents
 
-- [📜 Code of Conduct](#-code-of-conduct)
-- [🤝 How to Contribute](#-how-to-contribute)
-- [🐛 Reporting Bugs](#-reporting-bugs)
-- [💡 Suggesting Features](#-suggesting-features)
-- [💻 Development Setup](#-development-setup)
-- [📝 Pull Request Process](#-pull-request-process)
-- [🎨 Style Guides](#-style-guides)
-- [🧪 Testing Guidelines](#-testing-guidelines)
-- [❓ Questions](#-questions)
+1. [Code of Conduct](#-code-of-conduct)
+2. [Getting Started](#-getting-started)
+3. [How to Contribute](#-how-to-contribute)
+4. [Development Workflow](#-development-workflow)
+5. [Pull Request Process](#-pull-request-process)
+6. [Style Guidelines](#-style-guidelines)
+7. [Reporting Issues](#-reporting-issues)
+8. [Questions?](#-questions)
 
 ---
 
 ## 📜 Code of Conduct
 
-We are committed to providing a friendly, safe, and welcoming environment for all contributors. Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
-
-### Our Standards
-
-**Positive behavior includes:**
-- Using welcoming and inclusive language
-- Being respectful of differing viewpoints
-- Gracefully accepting constructive criticism
-- Focusing on what's best for the community
-- Showing empathy towards other community members
-
-**Unacceptable behavior includes:**
-- Trolling, insulting/derogatory comments
-- Public or private harassment
-- Publishing others' private information
-- Other conduct which could reasonably be considered inappropriate
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing. We are committed to providing a welcoming and inclusive environment for everyone.
 
 ---
 
-## 🤝 How to Contribute
+## 🚀 Getting Started
 
-### 1. Find an Issue
+### Prerequisites
 
-Look for issues with these labels:
+| Requirement | Version |
+| :--- | :--- |
+| **Node.js** | v18.x or higher |
+| **npm** | v9.x or higher |
+| **MongoDB** | Local or Atlas (cloud) |
 
-| Label | Description | For Who |
-|-------|-------------|---------|
-| 🟣 `good first issue` | Simple, well-defined tasks | **First-time contributors** |
-| 🟢 `help wanted` | Important tasks needing help | All contributors |
-| 🐛 `bug` | Something is broken | Bug fixers |
-| ✨ `enhancement` | New feature requests | Feature builders |
+### Fork the Repository
 
-### 2. Claim the Issue
-
-- Comment on the issue: `"I'd like to work on this"`
-- Wait for assignment or confirmation
-- If no response in 3 days, feel free to start
-
-### 3. Fork & Clone
+1. Go to [MyZubster on GitHub](https://github.com/DanielIoni-creator/MyZubsterAPP)
+2. Click the **Fork** button (top right)
+3. Clone your fork locally:
 
 ```bash
-# Fork the repository on GitHub
-# Then clone your fork
-git clone https://github.com/your-username/MyZubsterh4x0r.git
-cd MyZubsterh4x0r
+git clone https://github.com/YOUR-USERNAME/MyZubsterAPP.git
+cd MyZubsterAPP
