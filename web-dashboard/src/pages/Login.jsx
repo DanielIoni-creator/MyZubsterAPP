@@ -1,5 +1,6 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { login, register } from '../services/api';
 
 const Login = ({ onLogin }) => {
@@ -7,20 +8,20 @@ const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
       let response;
       if (isLogin) {
         response = await login(email, password);
+        toast.success('Login effettuato con successo! ✅');
       } else {
         response = await register(email, password, name);
+        toast.success('Registrazione completata! 🎉');
       }
 
       const { token, user } = response.data;
@@ -28,25 +29,27 @@ const Login = ({ onLogin }) => {
       localStorage.setItem('user', JSON.stringify(user));
       onLogin(user);
     } catch (err) {
-      setError(err.response?.data?.error || 'Errore di autenticazione');
+      const errorMsg = err.response?.data?.error || 'Errore di autenticazione';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '50px auto', padding: 20, border: '1px solid #ddd', borderRadius: 8 }}>
-      <h2>{isLogin ? 'Login' : 'Registrazione'}</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <div className="auth-container">
+      <h2>{isLogin ? 'Benvenuto' : 'Crea il tuo account'}</h2>
+      <p className="subtitle">
+        {isLogin ? 'Accedi al tuo account' : 'Registrati per iniziare'}
+      </p>
       <form onSubmit={handleSubmit}>
         {!isLogin && (
           <input
             type="text"
-            placeholder="Nome"
+            placeholder="Nome completo"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required={!isLogin}
-            style={{ width: '100%', padding: 8, marginBottom: 10, boxSizing: 'border-box' }}
           />
         )}
         <input
@@ -55,25 +58,22 @@ const Login = ({ onLogin }) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          style={{ width: '100%', padding: 8, marginBottom: 10, boxSizing: 'border-box' }}
         />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Password (min 6 caratteri)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ width: '100%', padding: 8, marginBottom: 10, boxSizing: 'border-box' }}
+          minLength="6"
         />
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10, background: '#007bff', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+        <button type="submit" disabled={loading}>
           {loading ? 'Caricamento...' : (isLogin ? 'Accedi' : 'Registrati')}
         </button>
       </form>
-      <p style={{ marginTop: 10, textAlign: 'center' }}>
-        <button onClick={() => setIsLogin(!isLogin)} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer' }}>
-          {isLogin ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi'}
-        </button>
-      </p>
+      <button className="toggle-btn" onClick={() => setIsLogin(!isLogin)}>
+        {isLogin ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi'}
+      </button>
     </div>
   );
 };

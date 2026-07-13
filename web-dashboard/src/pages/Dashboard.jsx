@@ -1,11 +1,17 @@
 // src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { getOrders, createOrder, startPayment, getPaymentStatus, cancelOrder } from '../services/api';
 
 const Dashboard = ({ user, onLogout }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newOrder, setNewOrder] = useState({ items: [{ name: '', quantity: 1, price: 0 }], total: 0 });
+  const [creating, setCreating] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [newOrder, setNewOrder] = useState({ 
+    items: [{ name: '', quantity: 1, price: 0 }], 
+    total: 0 
+  });
 
   useEffect(() => {
     loadOrders();
@@ -16,7 +22,7 @@ const Dashboard = ({ user, onLogout }) => {
       const response = await getOrders();
       setOrders(response.data.orders || []);
     } catch (error) {
-      console.error('Errore caricamento ordini:', error);
+      toast.error('Errore caricamento ordini');
     } finally {
       setLoading(false);
     }
@@ -24,37 +30,52 @@ const Dashboard = ({ user, onLogout }) => {
 
   const handleCreateOrder = async (e) => {
     e.preventDefault();
+    if (newOrder.items.some(item => !item.name || item.price <= 0)) {
+      toast.warning('Compila tutti i campi correttamente');
+      return;
+    }
+    setCreating(true);
     try {
       const response = await createOrder(
         newOrder.items,
         newOrder.total,
         'XMR'
       );
-      alert(`Ordine creato! ID: ${response.data.order.orderNumber}`);
+      toast.success(`Ordine creato! ID: ${response.data.order.orderNumber}`);
       setNewOrder({ items: [{ name: '', quantity: 1, price: 0 }], total: 0 });
-      loadOrders();
+      await loadOrders();
     } catch (error) {
-      alert('Errore creazione ordine: ' + (error.response?.data?.error || error.message));
+      toast.error(error.response?.data?.error || 'Errore creazione ordine');
+    } finally {
+      setCreating(false);
     }
   };
 
   const handlePayOrder = async (orderId, amount) => {
+    setPaying(true);
     try {
       const response = await startPayment(orderId, amount);
       const paymentId = response.data.payment.id;
-      alert(`Pagamento avviato! Payment ID: ${paymentId}`);
+      toast.info(`Pagamento avviato! Payment ID: ${paymentId}`);
       
       setTimeout(async () => {
         try {
           const statusRes = await getPaymentStatus(paymentId);
-          alert(`Stato pagamento: ${statusRes.data.status}`);
-          loadOrders();
+          if (statusRes.data.status === 'confirmed') {
+            toast.success('✅ Pagamento confermato!');
+          } else {
+            toast.info(`Stato: ${statusRes.data.status}`);
+          }
+          await loadOrders();
         } catch (err) {
-          console.error('Errore verifica stato:', err);
+          toast.error('Errore verifica stato');
+        } finally {
+          setPaying(false);
         }
       }, 4000);
     } catch (error) {
-      alert('Errore pagamento: ' + (error.response?.data?.error || error.message));
+      toast.error(error.response?.data?.error || 'Errore pagamento');
+      setPaying(false);
     }
   };
 
@@ -62,121 +83,147 @@ const Dashboard = ({ user, onLogout }) => {
     if (!window.confirm('Annullare questo ordine?')) return;
     try {
       await cancelOrder(orderId);
-      alert('Ordine annullato!');
-      loadOrders();
+      toast.success('Ordine annullato!');
+      await loadOrders();
     } catch (error) {
-      alert('Errore annullamento: ' + (error.response?.data?.error || error.message));
+      toast.error(error.response?.data?.error || 'Errore annullamento');
     }
   };
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 50 }}>Caricamento ordini...</div>;
+  const addItem = () => {
+    setNewOrder({
+      ...newOrder,
+      items: [...newOrder.items, { name: '', quantity: 1, price: 0 }]
+    });
+  };
+
+  const removeItem = (index) => {
+    const items = newOrder.items.filter((_, i) => i !== index);
+    const total = items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
+    setNewOrder({ ...newOrder, items, total });
+  };
+
+  const updateItem = (index, field, value) => {
+    const items = [...newOrder.items];
+    items[index][field] = value;
+    const total = items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
+    setNewOrder({ ...newOrder, items, total });
+  };
+
+  if (loading) {
+    return (
+      <div className="spinner-container">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: 800, margin: '20px auto', padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h2>Benvenuto, {user?.name || 'Utente'}!</h2>
-        <button onClick={onLogout} style={{ padding: '8px 16px', background: '#dc3545', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-          Logout
-        </button>
+    <div>
+      <div className="dashboard-header">
+        <h1>📦 MyZubster</h1>
+        <div className="user-info">
+          <span>👋 {user?.name || 'Utente'}</span>
+          <button className="logout-btn" onClick={onLogout}>
+            Logout
+          </button>
+        </div>
       </div>
 
-      <h3>I tuoi ordini</h3>
+      <h2 className="section-title">I tuoi ordini</h2>
       {orders.length === 0 ? (
-        <p>Nessun ordine trovato.</p>
+        <div className="empty-state">
+          <div className="icon">📭</div>
+          <h3>Nessun ordine</h3>
+          <p>Non hai ancora creato ordini. Inizia qui sotto!</p>
+        </div>
       ) : (
-        orders.map((order) => (
-          <div key={order._id} style={{ border: '1px solid #ddd', padding: 15, marginBottom: 10, borderRadius: 8 }}>
-            <p><strong>Ordine:</strong> {order.orderNumber}</p>
-            <p><strong>Stato:</strong> <span style={{ fontWeight: 'bold', color: order.status === 'paid' ? 'green' : 'orange' }}>{order.status}</span></p>
-            <p><strong>Totale:</strong> {order.total} {order.currency}</p>
-            <p><strong>Items:</strong> {order.items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</p>
-            <div style={{ marginTop: 10 }}>
-              {order.status === 'pending' && (
-                <>
-                  <button onClick={() => handlePayOrder(order._id, order.total)} style={{ marginRight: 10, padding: '5px 10px', background: '#28a745', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-                    Paga {order.total} {order.currency}
+        <div className="orders-grid">
+          {orders.map((order) => (
+            <div key={order._id} className="order-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="order-number">{order.orderNumber}</span>
+                <span className={`order-status ${order.status}`}>
+                  {order.status}
+                </span>
+              </div>
+              <div className="order-details">
+                <p><strong>Totale:</strong> {order.total} {order.currency}</p>
+                <p><strong>Items:</strong> {order.items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</p>
+                {order.paymentStatus === 'confirmed' && (
+                  <p style={{ color: '#059669', fontWeight: 600 }}>✅ Pagato</p>
+                )}
+              </div>
+              <div className="order-actions">
+                {order.status === 'pending' && (
+                  <>
+                    <button 
+                      className="btn-pay" 
+                      onClick={() => handlePayOrder(order._id, order.total)}
+                      disabled={paying}
+                    >
+                      {paying ? '⏳' : `Paga ${order.total} ${order.currency}`}
+                    </button>
+                    <button 
+                      className="btn-cancel" 
+                      onClick={() => handleCancelOrder(order._id)}
+                    >
+                      Annulla
+                    </button>
+                  </>
+                )}
+                {order.status === 'paid' && (
+                  <button className="btn-disabled" disabled>
+                    ✅ Pagato
                   </button>
-                  <button onClick={() => handleCancelOrder(order._id)} style={{ padding: '5px 10px', background: '#dc3545', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-                    Annulla
-                  </button>
-                </>
-              )}
-              {order.status === 'paid' && <span style={{ color: 'green' }}>✅ Pagato</span>}
+                )}
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
 
-      <h3>Nuovo ordine</h3>
-      <form onSubmit={handleCreateOrder} style={{ border: '1px solid #ddd', padding: 15, borderRadius: 8 }}>
+      <h2 className="section-title">🛒 Nuovo ordine</h2>
+      <form className="create-order-form" onSubmit={handleCreateOrder}>
         {newOrder.items.map((item, index) => (
-          <div key={index} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+          <div key={index} className="item-row">
             <input
               placeholder="Nome prodotto"
               value={item.name}
-              onChange={(e) => {
-                const items = [...newOrder.items];
-                items[index].name = e.target.value;
-                setNewOrder({ ...newOrder, items });
-              }}
+              onChange={(e) => updateItem(index, 'name', e.target.value)}
               required
-              style={{ flex: 2, padding: 8, boxSizing: 'border-box' }}
             />
             <input
               type="number"
               placeholder="Qty"
               value={item.quantity}
-              onChange={(e) => {
-                const items = [...newOrder.items];
-                items[index].quantity = parseInt(e.target.value) || 1;
-                setNewOrder({ ...newOrder, items });
-              }}
-              required
+              onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
               min="1"
-              style={{ flex: 1, padding: 8, boxSizing: 'border-box' }}
+              required
             />
             <input
               type="number"
               placeholder="Prezzo"
               value={item.price}
-              onChange={(e) => {
-                const items = [...newOrder.items];
-                items[index].price = parseFloat(e.target.value) || 0;
-                const total = items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
-                setNewOrder({ ...newOrder, items, total });
-              }}
-              required
+              onChange={(e) => updateItem(index, 'price', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.01"
-              style={{ flex: 1, padding: 8, boxSizing: 'border-box' }}
+              required
             />
-            <button
-              type="button"
-              onClick={() => {
-                const items = newOrder.items.filter((_, i) => i !== index);
-                const total = items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
-                setNewOrder({ ...newOrder, items, total });
-              }}
-              style={{ padding: '0 10px', background: '#dc3545', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-            >
-              ✕
-            </button>
+            {newOrder.items.length > 1 && (
+              <button type="button" className="remove-btn" onClick={() => removeItem(index)}>
+                ✕
+              </button>
+            )}
           </div>
         ))}
-        <button
-          type="button"
-          onClick={() => {
-            const items = [...newOrder.items, { name: '', quantity: 1, price: 0 }];
-            setNewOrder({ ...newOrder, items });
-          }}
-          style={{ marginBottom: 10, padding: '5px 10px', background: '#6c757d', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-        >
+        <button type="button" className="add-item-btn" onClick={addItem}>
           + Aggiungi item
         </button>
-        <div style={{ marginTop: 10 }}>
-          <p><strong>Totale:</strong> {newOrder.total} XMR</p>
-          <button type="submit" style={{ padding: '8px 16px', background: '#007bff', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-            Crea Ordine
+        <div className="form-footer">
+          <span className="total">Totale: {newOrder.total} XMR</span>
+          <button type="submit" className="create-btn" disabled={creating}>
+            {creating ? 'Creazione...' : 'Crea Ordine'}
           </button>
         </div>
       </form>
