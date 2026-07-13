@@ -76,3 +76,4 @@ API Health Check	http://localhost:5000/api/health
 This project is distributed under the MIT License.
 
 Built with ❤️ by Danielloni-creator
+> **Update:** Backend and frontend are now fully functional on Vercel.
