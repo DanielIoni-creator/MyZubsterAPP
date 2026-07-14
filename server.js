@@ -5,12 +5,18 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 const xss = require('xss');
 const csrf = require('csurf');
+const { createServer } = require('http');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 const connectDB = require('./config/database');
 const orderRoutes = require('./routes/orders');
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
 const jwtService = require('./services/jwtService');
+const { initializeWebSocket } = require('./services/websocket');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -132,15 +138,19 @@ app.use((req, res, next) => {
 });
 console.log('✅ XSS sanitizzazione attiva');
 
+// ========== COOKIE PARSER (per CSRF) ==========
+app.use(cookieParser(process.env.COOKIE_SECRET || 'my-secret-key'));
+
 // ========== MIDDLEWARE ==========
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
-// ========== ROTTE (PRIMA DEL CSRF) ==========
+// ========== ROTTE ==========
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin', adminRoutes);
 
-// ========== JWT REFRESH TOKEN (PRIMA DEL CSRF) ==========
+// ========== JWT REFRESH TOKEN ==========
 app.post('/api/auth/refresh', (req, res) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
@@ -173,16 +183,13 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
-// ========== CSRF PROTECTION (escluso refresh e auth) ==========
+// ========== CSRF PROTECTION (escluso auth e admin) ==========
 app.use((req, res, next) => {
-  // Escludi le route auth dal CSRF
-  const excludedPaths = [
-    '/api/auth/refresh',
-    '/api/auth/login',
-    '/api/auth/register'
-  ];
-  
-  if (excludedPaths.includes(req.path)) {
+  // Escludi le route auth e admin dal CSRF
+  if (
+    req.path.startsWith('/api/auth/') ||
+    req.path.startsWith('/api/admin/')
+  ) {
     return next();
   }
   
@@ -191,7 +198,11 @@ app.use((req, res, next) => {
   }
   next();
 });
-console.log('✅ CSRF protection configurata (escluso auth)');
+console.log('✅ CSRF protection configurata (escluso auth e admin)');
+
+// ========== SWAGGER DOCUMENTATION ==========
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+console.log('📚 Swagger disponibile su /api-docs');
 
 // ========== HEALTH CHECK ==========
 app.get('/api/health', (req, res) => {
@@ -226,8 +237,10 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     documentation: 'https://github.com/DanielIoni-creator/MyZubsterAPP',
     endpoints: {
+      docs: '/api-docs',
       auth: '/api/auth',
       orders: '/api/orders',
+      admin: '/api/admin',
       health: '/api/health',
       csrfToken: '/api/csrf-token',
       refreshToken: '/api/auth/refresh'
@@ -292,11 +305,18 @@ if (process.env.NODE_ENV !== 'test') {
   console.log('🔄 Connessione al database...');
   connectDB()
     .then(() => {
-      app.listen(PORT, () => {
+      const httpServer = createServer(app);
+      const io = initializeWebSocket(httpServer);
+      console.log('🔌 WebSocket inizializzato');
+
+      httpServer.listen(PORT, () => {
         console.log(`🚀 Server avviato su http://localhost:${PORT}`);
         console.log(`📦 Modalità: ${process.env.NODE_ENV || 'development'}`);
         console.log(`🔒 Sicurezza: ${process.env.NODE_ENV === 'production' ? '🔒 HTTPS/Prod' : '🛡️ Sviluppo'}`);
         console.log(`🛡️  XSS: Attivo | CSRF: Attivo | RateLimit: Attivo`);
+        console.log(`📚 Swagger: http://localhost:${PORT}/api-docs`);
+        console.log(`🔌 WebSocket: ws://localhost:${PORT}`);
+        console.log(`🛡️ Admin panel: /api/admin`);
       });
     })
     .catch(err => {
