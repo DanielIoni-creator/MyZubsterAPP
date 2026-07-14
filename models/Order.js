@@ -1,11 +1,10 @@
 // models/Order.js
 const mongoose = require('mongoose');
 
-// Schema per gli item dell'ordine
 const orderItemSchema = new mongoose.Schema({
   productId: {
     type: String,
-    default: null,  // 👈 RENDIAMO OPZIONALE (non obbligatorio)
+    default: null,
     trim: true
   },
   name: {
@@ -31,12 +30,10 @@ const orderItemSchema = new mongoose.Schema({
   }
 });
 
-// Schema principale dell'ordine
 const orderSchema = new mongoose.Schema(
   {
     orderNumber: {
       type: String,
-      unique: true,
       default: function() {
         return `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       }
@@ -110,7 +107,7 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-// Indici per query veloci
+// Indici per query veloci (SENZA DUPLICATI)
 orderSchema.index({ userId: 1, status: 1 });
 orderSchema.index({ orderNumber: 1 }, { unique: true });
 orderSchema.index({ createdAt: -1 });
@@ -143,7 +140,6 @@ orderSchema.methods.isCancellable = function() {
   return this.status === 'pending' && this.paymentStatus !== 'confirmed';
 };
 
-// Metodo per ottenere il totale degli item (calcolato)
 orderSchema.methods.calculateTotal = function() {
   return this.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
 };

@@ -17,8 +17,6 @@ const connectDB = async () => {
       try {
         console.log('🔄 Tentativo connessione senza autenticazione...');
         await mongoose.connect(localUri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
           serverSelectionTimeoutMS: 2000
         });
         console.log('✅ MongoDB connesso (senza autenticazione)');
@@ -30,8 +28,6 @@ const connectDB = async () => {
           console.log('🔄 Tentativo con autenticazione...');
           localUri = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@localhost:27017/${dbName}?authSource=admin`;
           await mongoose.connect(localUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             serverSelectionTimeoutMS: 5000
           });
           console.log('✅ MongoDB connesso (con autenticazione)');
@@ -43,12 +39,10 @@ const connectDB = async () => {
       }
     }
 
-    // 3. Connessione con MONGODB_URI (Render)
+    // 3. Connessione con MONGODB_URI (Render/Atlas)
     console.log('🔄 Connessione a MongoDB Atlas via MONGODB_URI...');
     await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 5000
     });
 
     console.log(`✅ MongoDB connesso: ${mongoose.connection.host}`);
