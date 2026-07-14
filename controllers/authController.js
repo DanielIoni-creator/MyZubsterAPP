@@ -7,29 +7,27 @@ exports.register = async (req, res) => {
   try {
     const { email, password, name } = req.body;
 
-    // Validazioni
     if (!email || !password || !name) {
       return res.status(400).json({
         error: 'Dati mancanti. Richiesti: email, password, name'
       });
     }
 
-    // Controlla se l'utente esiste già
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'Email già registrata' });
     }
 
-    // Crea l'utente
     const user = new User({ email, password, name });
     await user.save();
 
-    // Genera token
     const token = jwtService.generateToken(user._id, user.email, user.role);
+    const refreshToken = jwtService.generateRefreshToken(user._id);
 
     res.status(201).json({
       success: true,
       token,
+      refreshToken,
       user: {
         id: user._id,
         email: user.email,
@@ -55,28 +53,26 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: 'Email e password sono obbligatori' });
     }
 
-    // Trova l'utente (includi password)
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
 
-    // Verifica la password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
 
-    // Aggiorna ultimo login
     user.lastLogin = new Date();
     await user.save();
 
-    // Genera token
     const token = jwtService.generateToken(user._id, user.email, user.role);
+    const refreshToken = jwtService.generateRefreshToken(user._id);
 
     res.json({
       success: true,
       token,
+      refreshToken,
       user: {
         id: user._id,
         email: user.email,
@@ -93,7 +89,24 @@ exports.login = async (req, res) => {
   }
 };
 
-// ========== PROFILO UTENTE ==========
+// ========== LOGOUT ==========
+exports.logout = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (refreshToken) {
+      jwtService.revokeRefreshToken(refreshToken);
+    }
+    res.json({
+      success: true,
+      message: 'Logout effettuato con successo'
+    });
+  } catch (error) {
+    console.error('Errore logout:', error);
+    res.status(500).json({ error: 'Errore durante il logout' });
+  }
+};
+
+// ========== PROFILO ==========
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -119,7 +132,6 @@ exports.updateProfile = async (req, res) => {
 
     if (name) user.name = name;
     if (email) {
-      // Controlla se l'email è già usata da un altro utente
       const existingUser = await User.findOne({ email, _id: { $ne: req.user.id } });
       if (existingUser) {
         return res.status(400).json({ error: 'Email già in uso da un altro utente' });

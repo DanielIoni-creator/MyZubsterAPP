@@ -10,6 +10,7 @@ const csrf = require('csurf');
 const connectDB = require('./config/database');
 const orderRoutes = require('./routes/orders');
 const authRoutes = require('./routes/auth');
+const jwtService = require('./services/jwtService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -131,6 +132,34 @@ app.use((req, res, next) => {
 });
 console.log('✅ XSS sanitizzazione attiva');
 
+// ========== MIDDLEWARE ==========
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
+// ========== ROTTE (PRIMA DEL CSRF) ==========
+app.use('/api/auth', authRoutes);
+app.use('/api/orders', orderRoutes);
+
+// ========== JWT REFRESH TOKEN (PRIMA DEL CSRF) ==========
+app.post('/api/auth/refresh', (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'Refresh token mancante' });
+  }
+
+  const decoded = jwtService.verifyRefreshToken(refreshToken);
+  if (!decoded) {
+    return res.status(403).json({ error: 'Refresh token non valido o scaduto' });
+  }
+
+  const newToken = jwtService.generateToken(decoded.userId);
+  
+  res.json({
+    success: true,
+    token: newToken
+  });
+});
+
 // ========== CSRF PROTECTION ==========
 const csrfProtection = csrf({
   cookie: {
@@ -140,53 +169,31 @@ const csrfProtection = csrf({
   }
 });
 
-// Endpoint per ottenere il token CSRF
 app.get('/api/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
-// Applica CSRF solo alle route di modifica (escluso GET e OPTIONS)
+// ========== CSRF PROTECTION (escluso refresh e auth) ==========
 app.use((req, res, next) => {
+  // Escludi le route auth dal CSRF
+  const excludedPaths = [
+    '/api/auth/refresh',
+    '/api/auth/login',
+    '/api/auth/register'
+  ];
+  
+  if (excludedPaths.includes(req.path)) {
+    return next();
+  }
+  
   if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
     return csrfProtection(req, res, next);
   }
   next();
 });
-console.log('✅ CSRF protection configurata');
+console.log('✅ CSRF protection configurata (escluso auth)');
 
-// ========== MIDDLEWARE ==========
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
-
-// ========== ROTTE ==========
-app.use('/api/auth', authRoutes);
-app.use('/api/orders', orderRoutes);
-
-// ========== JWT REFRESH TOKEN ==========
-const refreshTokens = new Map();
-
-// Endpoint per refresh token
-app.post('/api/auth/refresh', (req, res) => {
-  const { refreshToken } = req.body;
-  if (!refreshToken) {
-    return res.status(401).json({ error: 'Refresh token mancante' });
-  }
-
-  const userId = refreshTokens.get(refreshToken);
-  if (!userId) {
-    return res.status(403).json({ error: 'Refresh token non valido' });
-  }
-
-  const jwtService = require('./services/jwtService');
-  const newToken = jwtService.generateToken(userId, null, null);
-  
-  res.json({
-    success: true,
-    token: newToken
-  });
-});
-
-// Health check
+// ========== HEALTH CHECK ==========
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -230,20 +237,17 @@ app.get('/', (req, res) => {
 
 // ========== ERROR HANDLING ==========
 app.use((err, req, res, next) => {
-  // Log dell'errore
   console.error('❌ Errore server:', err.message);
   if (process.env.NODE_ENV === 'development') {
     console.error(err.stack);
   }
 
-  // Gestione errori CSRF
   if (err.code === 'EBADCSRFTOKEN') {
     return res.status(403).json({
       error: 'Token CSRF non valido o scaduto'
     });
   }
 
-  // Gestione errori di validazione
   if (err.name === 'ValidationError') {
     return res.status(400).json({
       error: 'Errore di validazione',
@@ -251,7 +255,6 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Gestione errori JWT
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
       error: 'Token non valido'
@@ -264,7 +267,6 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Gestione errori MongoDB
   if (err.name === 'MongoServerError') {
     if (err.code === 11000) {
       return res.status(409).json({

@@ -10,7 +10,10 @@ router.post('/register', authController.register);
 // POST /api/auth/login - Login
 router.post('/login', authController.login);
 
-// GET /api/auth/profile - Profilo utente (protetto)
+// POST /api/auth/logout - Logout (protetto)
+router.post('/logout', authenticate, authController.logout);
+
+// GET /api/auth/profile - Profilo (protetto)
 router.get('/profile', authenticate, authController.getProfile);
 
 // PUT /api/auth/profile - Aggiorna profilo (protetto)
