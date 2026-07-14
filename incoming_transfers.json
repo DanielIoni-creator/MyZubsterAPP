@@ -1,0 +1,9 @@
+{
+  "jsonrpc": "2.0",
+  "id": "0",
+  "method": "incoming_transfers",
+  "params": {
+    "transfer_type": "all",
+    "account_index": 0
+  }
+}
