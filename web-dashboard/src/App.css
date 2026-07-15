@@ -18,7 +18,36 @@ body {
   padding: 20px;
 }
 
-/* ===== Login / Registrazione ===== */
+/* ===== ANIMAZIONI ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* ===== LOGIN / REGISTRAZIONE ===== */
 .auth-container {
   max-width: 420px;
   margin: 60px auto;
@@ -26,6 +55,7 @@ body {
   background: white;
   border-radius: 16px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  animation: fadeIn 0.4s ease-out;
 }
 
 .auth-container h2 {
@@ -78,7 +108,7 @@ body {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
 }
 
 .auth-container form button:hover {
@@ -101,7 +131,7 @@ body {
   text-decoration: underline;
 }
 
-/* ===== Dashboard ===== */
+/* ===== DASHBOARD ===== */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -109,6 +139,8 @@ body {
   padding: 20px 0;
   margin-bottom: 24px;
   border-bottom: 2px solid #e5e7eb;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .dashboard-header h1 {
@@ -120,6 +152,7 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .dashboard-header .user-info span {
@@ -142,7 +175,20 @@ body {
   background: #dc2626;
 }
 
-/* ===== Ordini ===== */
+.dashboard-header .admin-link {
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.dashboard-header .admin-link:hover {
+  background: #eef2ff;
+}
+
+/* ===== ORDINI ===== */
 .section-title {
   font-size: 20px;
   font-weight: 600;
@@ -161,12 +207,12 @@ body {
   border-radius: 14px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border: 1px solid #e5e7eb;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .order-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.10);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
 .order-card .order-number {
@@ -194,6 +240,26 @@ body {
   color: #059669;
 }
 
+.order-card .order-status.processing {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.order-card .order-status.shipped {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.order-card .order-status.delivered {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.order-card .order-status.cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
 .order-card .order-details {
   margin: 12px 0;
   font-size: 14px;
@@ -218,11 +284,17 @@ body {
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.2s;
 }
 
-.order-card .order-actions button:hover {
+.order-card .order-actions button:hover:not(:disabled) {
   opacity: 0.85;
+  transform: scale(1.02);
+}
+
+.order-card .order-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .order-card .order-actions .btn-pay {
@@ -242,7 +314,41 @@ body {
   opacity: 0.5;
 }
 
-/* ===== Creazione ordine ===== */
+/* ===== STATS CARDS (Admin) ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card h3 {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.stat-card .stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ===== CREAZIONE ORDINE ===== */
 .create-order-form {
   background: white;
   padding: 24px;
@@ -291,6 +397,11 @@ body {
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
+  transition: background 0.2s;
+}
+
+.create-order-form .item-row .remove-btn:hover {
+  background: #dc2626;
 }
 
 .create-order-form .add-item-btn {
@@ -302,6 +413,11 @@ body {
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
+  transition: background 0.2s;
+}
+
+.create-order-form .add-item-btn:hover {
+  background: #4b5563;
 }
 
 .create-order-form .form-footer {
@@ -311,6 +427,8 @@ body {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 2px solid #f3f4f6;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .create-order-form .form-footer .total {
@@ -328,14 +446,19 @@ body {
   font-weight: 600;
   font-size: 15px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
 }
 
-.create-order-form .form-footer .create-btn:hover {
+.create-order-form .form-footer .create-btn:hover:not(:disabled) {
   background: #4338ca;
 }
 
-/* ===== Spinner ===== */
+.create-order-form .form-footer .create-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== SPINNER / LOADER ===== */
 .spinner-container {
   display: flex;
   justify-content: center;
@@ -352,11 +475,28 @@ body {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+/* ===== BUTTON LOADING STATE ===== */
+.btn-loading {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
 }
 
-/* ===== Empty State ===== */
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ===== EMPTY STATE ===== */
 .empty-state {
   text-align: center;
   padding: 40px;
@@ -374,20 +514,39 @@ body {
   margin-bottom: 4px;
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 640px) {
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
-    gap: 12px;
     align-items: flex-start;
+    gap: 12px;
   }
 
   .orders-grid {
     grid-template-columns: 1fr;
   }
 
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .auth-container {
+    margin: 20px;
+    padding: 24px;
+  }
+
+  .order-card .order-actions {
+    flex-direction: column;
+  }
+
+  .order-card .order-actions button,
+  .order-card .order-actions select {
+    width: 100%;
+  }
+
   .create-order-form .item-row {
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .create-order-form .item-row input {
@@ -397,5 +556,33 @@ body {
   .create-order-form .form-footer {
     flex-direction: column;
     gap: 12px;
+    align-items: stretch;
+  }
+
+  .create-order-form .form-footer .create-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header h1 {
+    font-size: 20px;
+  }
+
+  .auth-container {
+    padding: 16px;
+    margin: 12px;
+  }
+
+  .auth-container h2 {
+    font-size: 22px;
+  }
+
+  .order-card {
+    padding: 14px;
   }
 }

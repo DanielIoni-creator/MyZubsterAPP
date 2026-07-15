@@ -9,8 +9,10 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Legge il token e lo usa come dipendenza per reagire ai cambiamenti
+  const token = localStorage.getItem('token');
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     if (!token) {
@@ -48,7 +50,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
         setIsAuthenticated(false);
         setLoading(false);
       });
-  }, [requireAdmin]);
+  }, [token, requireAdmin]); // 👈 Aggiunto token come dipendenza
 
   if (loading) {
     return <div className="spinner-container"><div className="spinner" /></div>;
