@@ -1,11 +1,12 @@
 # MyZubster 🛒🔒
 
-**Self-hosted Monero payment integration with subaddresses**
+**Self-hosted Monero payment gateway with subaddresses**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-20.x-green.svg)](https://nodejs.org/)
 [![Monero](https://img.shields.io/badge/Monero-0.18.x-orange.svg)](https://www.getmonero.org/)
-[![Status](https://img.shields.io/badge/status-beta-blue.svg)]()
+[![Docker](https://img.shields.io/badge/Docker-ready-blue.svg)](https://www.docker.com/)
+[![Status](https://img.shields.io/badge/status-production-green.svg)]()
 
 ---
 
@@ -19,24 +20,75 @@ MyZubster is a **self-hosted Monero payment gateway** that generates unique **su
 - ✅ **Real-time exchange rate** — XMR/USD via CoinGecko API
 - ✅ **Automatic payment monitoring** — checks for incoming payments every 60 seconds
 - ✅ **REST API** — simple integration with any frontend
+- ✅ **PostgreSQL persistence** — orders survive server restarts
+- ✅ **Docker ready** — one-command deployment
 - ✅ **Open source** — MIT license
 
 ---
 
-## 🚀 Quick Start
+## 🐳 Quick Start with Docker (Recommended)
+
+The easiest way to run MyZubster is with Docker Compose.
 
 ### Prerequisites
+- **Docker** and **Docker Compose** installed
+- **Monero Wallet RPC** running on your host (for testnet)
 
-- **Node.js** (v16+)
-- **Monero Wallet RPC** (monero-wallet-rpc)
-- **PostgreSQL** or **MongoDB** (optional, in-memory for testing)
-- **npm** or **yarn**
-
-### 1️⃣ Clone the repository
+### 1️⃣ Start Monero Wallet RPC (on host)
 
 ```bash
+monero-wallet-rpc --wallet-file fee_wallet --password myzubster --rpc-bind-port 18083 --testnet --disable-rpc-login
+2️⃣ Clone and start
+bash
+
 git clone https://github.com/DanielIoni-creator/MyZubsterAPP.git
 cd MyZubsterAPP/backend
+
+# Create .env from example
+cp .env.example .env
+
+# Start with Docker Compose
+docker-compose up -d
+
+3️⃣ The API is now available at
+text
+
+http://localhost:3000
+
+4️⃣ Create a test order
+bash
+
+curl -X POST http://localhost:3000/api/orders \
+  -H "Content-Type: application/json" \
+  -d '{"amount":0.01,"currency":"USD","customerEmail":"test@example.com"}'
+
+5️⃣ Check order status
+bash
+
+curl http://localhost:3000/api/orders/1
+
+6️⃣ Stop the containers
+bash
+
+docker-compose down
+
+🚀 Manual Setup (without Docker)
+Prerequisites
+
+    Node.js (v16+)
+
+    PostgreSQL (v13+)
+
+    Monero Wallet RPC
+
+    npm or yarn
+
+1️⃣ Clone the repository
+bash
+
+git clone https://github.com/DanielIoni-creator/MyZubsterAPP.git
+cd MyZubsterAPP/backend
+
 2️⃣ Install dependencies
 bash
 
@@ -55,6 +107,9 @@ env
 # Server
 PORT=3000
 NODE_ENV=development
+
+# Database
+DATABASE_URL=postgresql://postgres:password@localhost:5432/myzubster
 
 # Monero RPC
 MONERO_RPC_URL=http://localhost:18083
@@ -97,10 +152,10 @@ json
   "currency": "USD",
   "customerEmail": "customer@example.com",
   "moneroAddress": "B... (unique subaddress)",
-  "moneroAmount": 0.00003022,
+  "moneroAmount": 0.00003005,
   "addressIndex": 1,
   "status": "pending",
-  "createdAt": "2026-07-16T09:28:59.151Z"
+  "createdAt": "2026-07-16T..."
 }
 
 Get All Orders
@@ -129,10 +184,10 @@ json
 
 {
   "status": "ok",
-  "timestamp": "2026-07-16T09:30:00.000Z",
+  "timestamp": "2026-07-16T...",
   "service": "MyZubster Backend",
-  "version": "1.1.0",
-  "database": "in-memory (test)",
+  "version": "1.2.0",
+  "database": "connected",
   "monero": {
     "rpc": "http://localhost:18083",
     "network": "testnet"
@@ -159,35 +214,72 @@ json
 🛠️ Tech Stack
 Component	Technology
 Backend	Node.js + Express
-Database	In-memory (PostgreSQL/MongoDB ready)
+Database	PostgreSQL (via Sequelize ORM)
 Wallet RPC	monero-wallet-rpc
 Exchange Rate	CoinGecko API
 Monitoring	node-cron (every 60 seconds)
 Authentication	JWT (optional)
-Logging	Winston
+Containerization	Docker + Docker Compose
 📁 Project Structure
 text
 
 backend/
 ├── app.js                 # Main application entry point
+├── Dockerfile             # Docker image definition
+├── docker-compose.yml     # Docker Compose configuration
+├── models/
+│   └── index.js           # Sequelize models
 ├── services/
 │   ├── exchangeRate.js    # XMR/USD exchange rate
 │   └── paymentMonitor.js  # Payment monitoring (cron job)
-├── routes/                # API routes (if used)
-├── models/                # Database models (if used)
 └── .env.example           # Environment variables template
 
 🧪 Testing with Testnet
+1️⃣ Get testnet Monero from faucet
 
-    Get testnet Monero from a faucet (e.g., https://faucet.monero.town/)
+    https://cypherfaucet.com/xmr-testnet
 
-    Create an order via API
+    https://faucet.xmr.pt/
 
-    Send testnet XMR to the generated subaddress
+2️⃣ Create an order via API
+bash
 
-    Wait 60 seconds for the monitor to detect the payment
+curl -X POST http://localhost:3000/api/orders \
+  -H "Content-Type: application/json" \
+  -d '{"amount":0.01,"currency":"USD","customerEmail":"test@example.com"}'
 
-    Check order status with GET /api/orders/status/completed
+3️⃣ Send testnet XMR to the generated subaddress
+bash
+
+monero-wallet-cli --testnet --wallet-file fee_wallet
+transfer <subaddress> <amount>
+
+4️⃣ Wait 60 seconds for the monitor to detect the payment
+5️⃣ Check order status
+bash
+
+curl http://localhost:3000/api/orders/1
+
+🐳 Docker Commands
+bash
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Check status
+docker-compose ps
+
+# Restart a service
+docker-compose restart backend
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (delete data)
+docker-compose down -v
 
 🤝 Contributing
 
@@ -199,7 +291,6 @@ Contributions are welcome! Feel free to:
 
     🔧 Submit pull requests
 
-Please read our Contributing Guidelines before submitting.
 📄 License
 
 This project is licensed under the MIT License — see the LICENSE file for details.
