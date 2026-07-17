@@ -1,10 +1,11 @@
-// models/index.js - Configurazione Sequelize + Modello Order
+// models/index.js - Configurazione Sequelize (SQLite)
 const { Sequelize, DataTypes } = require('sequelize');
 require('dotenv').config();
 
-// Connessione al database
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: 'postgres',
+// Connessione al database SQLite (nessuna installazione richiesta)
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: './database.sqlite',
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
     max: 5,
@@ -14,7 +15,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
   }
 });
 
-// Definizione del modello Order (unificato qui)
+// Definizione del modello Order
 const Order = sequelize.define('Order', {
   id: {
     type: DataTypes.INTEGER,
