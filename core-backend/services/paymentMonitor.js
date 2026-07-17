@@ -1,129 +1,177 @@
-// services/paymentMonitor.js - Monitoraggio pagamenti Monero
-const cron = require('node-cron');
+// services/paymentMonitor.js
+const { Order } = require('../models');
 const axios = require('axios');
 
+const MONERO_RPC_URL = process.env.MONERO_RPC_URL || 'http://localhost:18083';
 const MONERO_MIN_CONFIRMATIONS = parseInt(process.env.MONERO_MIN_CONFIRMATIONS) || 10;
+const CHECK_INTERVAL = process.env.PAYMENT_CHECK_INTERVAL || 60000; // 60 secondi
 
-// Array per tenere traccia degli ordini (in futuro, database)
-let orders = [];
+let isMonitoring = false;
+let monitorInterval = null;
 
-/**
- * Avvia il monitoraggio periodico dei pagamenti
- * Controlla ogni 60 secondi gli ordini in stato 'pending'
- */
-function startPaymentMonitor() {
-  // Cron job: ogni 60 secondi
-  cron.schedule('*/60 * * * * *', async () => {
-    const pendingOrders = orders.filter(o => o.status === 'pending');
-    
+// ===== FUNZIONE WEBHOOK =====
+async function sendWebhook(orderId, status, txHash, confirmations, amountReceived) {
+  const webhookUrl = process.env.WEBHOOK_URL;
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+
+  if (!webhookUrl || !webhookSecret) {
+    console.log('⚠️ Webhook non configurato, salto notifica.');
+    return;
+  }
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Secret': webhookSecret
+      },
+      body: JSON.stringify({
+        orderId,
+        status,
+        txHash,
+        confirmations,
+        amountReceived
+      })
+    });
+
+    if (response.ok) {
+      console.log(`✅ Webhook inviato per ordine ${orderId}`);
+    } else {
+      console.error(`❌ Webhook fallito (${response.status}):`, await response.text());
+    }
+  } catch (error) {
+    console.error('❌ Errore invio webhook:', error.message);
+  }
+}
+
+// ===== CHIAMA RPC PER OTTENERE I PAGAMENTI =====
+async function getPayments(minHeight = 0) {
+  try {
+    const response = await axios.post(`${MONERO_RPC_URL}/json_rpc`, {
+      jsonrpc: '2.0',
+      id: '0',
+      method: 'get_bulk_payments',
+      params: {
+        min_block_height: minHeight,
+        payment_ids: [] // Recupera tutti i pagamenti
+      }
+    });
+    return response.data.result.payments || [];
+  } catch (error) {
+    console.error('❌ Errore RPC get_bulk_payments:', error.message);
+    return [];
+  }
+}
+
+// ===== VERIFICA GLI ORDINI IN SOSPESO =====
+async function checkPendingOrders() {
+  try {
+    const pendingOrders = await Order.findAll({
+      where: { status: 'pending' }
+    });
+
     if (pendingOrders.length === 0) {
       return;
     }
-    
-    console.log(`🔍 [Monitor] Controllo ${pendingOrders.length} pagamenti in sospeso...`);
-    
-    for (const order of pendingOrders) {
-      await checkPayment(order);
-    }
-  });
-  
-  console.log('✅ [Monitor] Avviato controllo pagamenti (ogni 60 secondi)');
-  console.log(`📊 [Monitor] ${orders.length} ordini totali, ${orders.filter(o => o.status === 'pending').length} in sospeso`);
-}
 
-/**
- * Verifica se un ordine ha ricevuto il pagamento
- * @param {Object} order - L'ordine da controllare
- */
-async function checkPayment(order) {
-  try {
-    const moneroRpcUrl = process.env.MONERO_RPC_URL || 'http://host.docker.internal:18083';
-    const addressIndex = order.addressIndex || 1;
-    
-    const response = await axios.post(`${moneroRpcUrl}/json_rpc`, {
-      jsonrpc: '2.0',
-      id: '0',
-      method: 'get_transfers',
-      params: {
-        in: true,
-        account_index: 0,
-        address_index: addressIndex
+    console.log(`🔍 [Monitor] Controllo ${pendingOrders.length} pagamenti in sospeso...`);
+
+    // Ottieni l'ultimo blocco per il minHeight
+    let minHeight = 0;
+    for (const order of pendingOrders) {
+      if (order.createdAt) {
+        // In pratica potremmo usare un valore fisso, ma meglio usare l'ultimo blocco noto
       }
-    });
-    
-    if (response.data.result && response.data.result.in) {
-      const transfers = response.data.result.in;
-      
-      for (const transfer of transfers) {
-        const amountReceived = parseFloat(transfer.amount) / 1e12;
-        const requiredAmount = order.moneroAmount;
-        const tolerance = requiredAmount * 0.05;
-        const minRequired = requiredAmount - tolerance;
-        
-        if (amountReceived >= minRequired) {
-          const confirmations = transfer.confirmations || 0;
-          
-          console.log(`🔍 [Monitor] Transazione su ordine #${order.id}: ${amountReceived.toFixed(8)} XMR, conferme: ${confirmations}`);
-          
-          if (confirmations >= MONERO_MIN_CONFIRMATIONS) {
-            // ✅ Pagamento confermato!
-            console.log(`✅ [Monitor] PAGAMENTO CONFERMATO per ordine #${order.id} (${confirmations} conferme)`);
-            console.log(`   📦 Richiesto: ${requiredAmount.toFixed(8)} XMR, Ricevuto: ${amountReceived.toFixed(8)} XMR`);
-            console.log(`   🔗 TxID: ${transfer.txid}`);
-            
-            order.status = 'completed';
-            order.paidAt = new Date().toISOString();
-            order.txHash = transfer.txid;
-            order.confirmations = confirmations;
-            order.amountReceived = amountReceived;
-            
-            console.log(`🎉 Ordine #${order.id} completato!`);
-          } else {
-            // ⏳ In attesa di conferme
-            console.log(`⏳ [Monitor] Ordine #${order.id} in attesa di conferme (${confirmations}/${MONERO_MIN_CONFIRMATIONS})`);
-            order.confirmations = confirmations;
-          }
-        } else if (amountReceived > 0) {
-          console.log(`⚠️ [Monitor] Pagamento PARZIALE per ordine #${order.id}: ${amountReceived.toFixed(8)} XMR (richiesto: ${requiredAmount.toFixed(8)} XMR)`);
+    }
+
+    const payments = await getPayments(0);
+
+    for (const order of pendingOrders) {
+      // Cerca pagamenti verso l'indirizzo dell'ordine
+      const matchingPayments = payments.filter(p => p.address === order.moneroAddress);
+
+      if (matchingPayments.length > 0) {
+        // Prendi il primo pagamento (o somma se multipli)
+        const payment = matchingPayments[0];
+        const amountReceived = payment.amount / 1e12; // Converti da piconero a XMR
+        const confirmations = payment.confirmations || 0;
+
+        console.log(`🔍 [Monitor] Transazione su ordine #${order.id}: ${amountReceived} XMR, conferme: ${confirmations}`);
+
+        // Se l'importo ricevuto è >= l'importo richiesto E conferme sufficienti
+        if (amountReceived >= order.moneroAmount && confirmations >= MONERO_MIN_CONFIRMATIONS) {
+          // Aggiorna l'ordine a completed
+          order.status = 'completed';
+          order.confirmations = confirmations;
+          order.amountReceived = amountReceived;
+          order.txHash = payment.tx_hash || null;
+          await order.save();
+
+          console.log(`✅ [Monitor] PAGAMENTO CONFERMATO per ordine #${order.id} (${confirmations} conferme)`);
+          console.log(`   📦 Richiesto: ${order.moneroAmount} XMR, Ricevuto: ${amountReceived} XMR`);
+          console.log(`   🔗 TxID: ${payment.tx_hash}`);
+
+          // 👇 WEBHOOK: notifica al marketplace
+          await sendWebhook(
+            order.id,
+            'completed',
+            payment.tx_hash || null,
+            confirmations,
+            amountReceived
+          );
+
+        } else if (amountReceived >= order.moneroAmount && confirmations < MONERO_MIN_CONFIRMATIONS) {
+          console.log(`⏳ [Monitor] Pagamento rilevato per ordine #${order.id}, ma conferme insufficienti (${confirmations}/${MONERO_MIN_CONFIRMATIONS})`);
+        } else if (amountReceived < order.moneroAmount) {
+          console.log(`⚠️ [Monitor] Pagamento PARZIALE per ordine #${order.id}: ${amountReceived} XMR (richiesto: ${order.moneroAmount} XMR)`);
         }
       }
     }
   } catch (error) {
-    if (error.code === 'ECONNREFUSED') {
-      console.warn(`⚠️ [Monitor] Wallet RPC non disponibile (assicurati che monero-wallet-rpc sia in esecuzione)`);
-    } else {
-      console.error(`❌ [Monitor] Errore controllo ordine #${order.id}:`, error.message);
-    }
+    console.error('❌ Errore nel monitoraggio pagamenti:', error.message);
   }
 }
 
-/**
- * Aggiunge un ordine al monitoraggio
- * @param {Object} order - L'ordine da aggiungere
- */
+// ===== AVVIA IL MONITORAGGIO =====
+function startPaymentMonitor() {
+  if (isMonitoring) {
+    console.log('⚠️ Monitoraggio già avviato.');
+    return;
+  }
+
+  console.log(`🔄 [Monitor] Avviato controllo pagamenti ogni ${CHECK_INTERVAL / 1000} secondi...`);
+  isMonitoring = true;
+
+  // Esegui subito il primo controllo
+  checkPendingOrders();
+
+  // Poi avvia l'intervallo
+  monitorInterval = setInterval(checkPendingOrders, CHECK_INTERVAL);
+}
+
+// ===== AGGIUNGI UN ORDINE AL MONITORAGGIO (richiamato alla creazione) =====
 function addOrderToMonitor(order) {
-  orders.push(order);
-  console.log(`📌 [Monitor] Ordine #${order.id} aggiunto al monitoraggio`);
+  console.log(`📦 [Monitor] Ordine #${order.id} aggiunto al monitoraggio (${order.moneroAmount} XMR)`);
+  // Se il monitor non è partito, avvialo
+  if (!isMonitoring) {
+    startPaymentMonitor();
+  }
 }
 
-/**
- * Ottiene tutti gli ordini
- */
-function getOrders() {
-  return orders;
+// ===== FERMA IL MONITORAGGIO =====
+function stopPaymentMonitor() {
+  if (monitorInterval) {
+    clearInterval(monitorInterval);
+    monitorInterval = null;
+    isMonitoring = false;
+    console.log('⏹️ [Monitor] Monitoraggio fermato.');
+  }
 }
 
-/**
- * Ottiene gli ordini per stato
- */
-function getOrdersByStatus(status) {
-  return orders.filter(o => o.status === status);
-}
-
-module.exports = { 
-  startPaymentMonitor, 
-  addOrderToMonitor, 
-  getOrders, 
-  getOrdersByStatus,
-  orders
+module.exports = {
+  startPaymentMonitor,
+  stopPaymentMonitor,
+  addOrderToMonitor,
+  checkPendingOrders
 };
