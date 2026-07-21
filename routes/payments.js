@@ -1,23 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const paymentService = require('../services/paymentService');
+const auth = require('../middleware/auth');
 
-router.post('/create', async (req, res) => {
+// POST /api/payments - Crea un pagamento Monero
+router.post('/', auth, async (req, res) => {
   try {
-    const { orderId, amount, currency } = req.body;
-    const payment = await paymentService.createPayment(orderId, amount, currency);
-    res.json({ success: true, data: payment });
+    const { orderId, amount } = req.body;
+    
+    // Per ora, restituisci solo un messaggio di test
+    res.json({
+      success: true,
+      message: 'Pagamento creato con successo',
+      orderId: orderId,
+      amount: amount,
+      address: '4A...test_address',
+      transactionId: 'test_' + Date.now()
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-router.get('/status/:paymentId', async (req, res) => {
-  try {
-    const payment = await paymentService.getPaymentStatus(req.params.paymentId);
-    res.json({ success: true, data: payment });
-  } catch (error) {
-    res.status(404).json({ success: false, error: error.message });
+    console.error('Errore creazione pagamento:', error);
+    res.status(500).json({ error: error.message || 'Errore nella creazione del pagamento' });
   }
 });
 
