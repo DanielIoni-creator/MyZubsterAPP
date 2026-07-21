@@ -12,6 +12,7 @@ const transactionRoutes = require('./routes/transactions');
 const reviewRoutes = require('./routes/reviews');
 const moneroService = require('./services/moneroService');
 const { startMonitoring } = require('./services/paymentMonitor');
+const tokenRoutes = require('./routes/tokens');
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/tokens', tokenRoutes);
 
 app.post('/api/payments/webhook', async (req, res) => {
   res.status(200).json({ received: true });
