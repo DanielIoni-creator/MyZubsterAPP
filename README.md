@@ -220,3 +220,31 @@ This project is licensed under the GPLv3 License – see the LICENSE file for de
 If you like this project, please give it a star ⭐ on GitHub and share it with others!
 
 Built with ❤️ for privacy, freedom, and decentralization.
+
+## 🤖 AI Integration (Local)
+
+MyZubster uses **Ollama** with **DeepSeek-R1:1.5B** for local AI capabilities:
+
+- **Security analysis**: scans logs and detects threats
+- **Support chatbot**: helps users with tokens and payments
+- **Automation**: reacts to anomalies in real time
+
+### Setup
+
+```bash
+ollama pull deepseek-r1:1.5b
+systemctl restart myzubster-gateway
+
+## 🤖 AI Integration (Local)
+
+MyZubster uses **Ollama** with **DeepSeek-R1:1.5B** for local AI capabilities:
+
+- **Security analysis**: scans logs and detects threats
+- **Support chatbot**: helps users with tokens and payments
+- **Automation**: reacts to anomalies in real time
+
+### Setup
+
+```bash
+ollama pull deepseek-r1:1.5b
+systemctl restart myzubster-gateway
