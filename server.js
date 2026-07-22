@@ -43,6 +43,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
+app.use("/api/users", require("./routes/users"));
 app.use('/api/reputation', reputationRoutes);
 
 app.post('/api/payments/webhook', async (req, res) => {

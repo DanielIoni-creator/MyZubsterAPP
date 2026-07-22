@@ -1,5 +1,6 @@
 const OrderBook = require('../models/OrderBook');
 const TokenHolding = require('../models/TokenHolding');
+const User = require('../models/User');
 
 const createSellOrder = async (sellerId, tokenId, amount, price) => {
   const holding = await TokenHolding.findOne({ user: sellerId, token: tokenId });
@@ -63,12 +64,14 @@ const buyFromOrder = async (orderId, buyerId, amount) => {
 
   const totalPrice = amount * order.price;
 
+  // Aggiorna l'ordine
   order.amount -= amount;
   if (order.amount === 0) {
     order.status = 'filled';
   }
   await order.save();
 
+  // Trasferisci i token dal venditore all'acquirente
   const sellerHolding = await TokenHolding.findOne({ user: order.seller, token: order.token });
   if (sellerHolding) {
     sellerHolding.lockedAmount = Math.max(0, (sellerHolding.lockedAmount || 0) - amount);
@@ -88,11 +91,27 @@ const buyFromOrder = async (orderId, buyerId, amount) => {
   buyerHolding.amount += amount;
   await buyerHolding.save();
 
+  // AGGIORNAMENTO REPUTAZIONE E PUNTI
+  // Venditore: +10 punti per token venduto
+  await User.findByIdAndUpdate(order.seller, {
+    $inc: {
+      completedTrades: 1,
+      reputationScore: amount * 10
+    }
+  });
+  // Acquirente: +5 punti per token acquistato
+  await User.findByIdAndUpdate(buyerId, {
+    $inc: {
+      completedTrades: 1,
+      reputationScore: amount * 5
+    }
+  });
+
   return { order, amount, totalPrice };
 };
 
-// Funzione per acquisto con Monero
-const purchaseWithMonero = async (orderId, buyerId, amount) => {
+// Funzione per acquisto con Monero (se usata)
+const purchaseWithMonero = async (orderId, buyerId, amount, moneroTxid) => {
   const order = await OrderBook.findById(orderId);
   if (!order) throw new Error('Ordine non trovato');
   if (order.status !== 'open') throw new Error('Ordine non più disponibile');
@@ -100,38 +119,22 @@ const purchaseWithMonero = async (orderId, buyerId, amount) => {
 
   const totalPrice = amount * order.price;
 
-  // Crea transazione Monero (semplificata per test)
-  const moneroTxid = `test_${Date.now()}`;
+  // Simula transazione Monero (per test)
+  const moneroService = require('./moneroService');
+  const payment = await moneroService.createPayment(orderId, buyerId, totalPrice);
 
-  // Aggiorna l'ordine
-  order.amount -= amount;
-  if (order.amount === 0) {
-    order.status = 'filled';
-  }
-  order.moneroTxid = moneroTxid;
+  order.moneroTxid = `pending_${payment.transactionId}`;
   await order.save();
 
-  // Aggiorna le holding
-  const sellerHolding = await TokenHolding.findOne({ user: order.seller, token: order.token });
-  if (sellerHolding) {
-    sellerHolding.lockedAmount = Math.max(0, (sellerHolding.lockedAmount || 0) - amount);
-    sellerHolding.amount -= amount;
-    await sellerHolding.save();
-  }
-
-  let buyerHolding = await TokenHolding.findOne({ user: buyerId, token: order.token });
-  if (!buyerHolding) {
-    buyerHolding = new TokenHolding({
-      user: buyerId,
-      token: order.token,
-      amount: 0,
-      lockedAmount: 0
-    });
-  }
-  buyerHolding.amount += amount;
-  await buyerHolding.save();
-
-  return { order, amount, totalPrice, moneroTxid };
+  return {
+    success: true,
+    order,
+    payment: {
+      address: payment.address,
+      amount: payment.amount,
+      expiresAt: payment.expiresAt
+    }
+  };
 };
 
 module.exports = {
