@@ -15,6 +15,7 @@ const { startMonitoring } = require('./services/paymentMonitor');
 const tokenRoutes = require('./routes/tokens');
 const marketplaceRoutes = require('./routes/marketplace');
 const aiRoutes = require("./routes/ai");
+const escrowRoutes = require("./routes/escrow");
 const reputationRoutes = require('./routes/reputation');
 const reputationService = require('./services/reputationService');
 
@@ -45,6 +46,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/escrow", escrowRoutes);
 app.use("/api/users", require("./routes/users"));
 app.use('/api/reputation', reputationRoutes);
 

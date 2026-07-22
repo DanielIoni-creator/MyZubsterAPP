@@ -13,3 +13,6 @@ myzubster_wallet*
 monero-wallet-rpc.log
 monerod.log
 nohup.out
+.env
+*.log
+*.lock
