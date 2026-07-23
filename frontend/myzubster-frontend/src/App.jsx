@@ -12,6 +12,7 @@ import OfferDetail from './pages/OfferDetail';
 import Requests from './pages/Requests';
 import Profile from './pages/Profile';
 import Tokens from './pages/Tokens';
+import CreateToken from "./pages/CreateToken";
 import ReputationNFTs from './pages/ReputationNFTs';
 
 const ProtectedRoute = ({ children }) => {
@@ -36,6 +37,7 @@ function App() {
           <Route path="/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/tokens" element={<Tokens />} />
+<Route path="/tokens/create" element={<ProtectedRoute><CreateToken /></ProtectedRoute>} />
           <Route path="/reputation" element={<ProtectedRoute><ReputationNFTs /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
